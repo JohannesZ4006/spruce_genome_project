@@ -12,6 +12,9 @@ use File::Basename;
 ##########																						##########
 ##########################################################################################################
 
+## 2013-09-17: changed by Johannes, based on http://sprucewiki.scilifelab.se/spruceassembly/node/1720:
+## -a TCGTATAACTTCGTATAATGTATGCTATACGAAGTTATTACG -a CGTAATAACTTCGTATAGCATACATTATACGAAGTTATACGA
+### Original:
 ### adapter
 ## -a CTGTCTCTTATACACATCTAGATGTGTATAAGAGACAG -a CTGTCTCTTATACACATCT -a AGATGTGTATAAGAGACAG
 ### references /bubo/nobackup/uppnex/reference/biodata/biodata.stage/genomes/Hsapiens/hg19/bwa/
@@ -28,7 +31,7 @@ my $noClean 			= 0;
 my $reference 			= "";
 my $help  				= 0;
 
-my $scriptDir    		= "/proj/b2013064/vezzi/scripts/projects/MP_pipelineProcessing/";
+my $scriptDir    		= "/bubo/home/h18/johann/spruce_scripts/";
 
 
 GetOptions(
@@ -158,13 +161,13 @@ sub MPpipeline_noRef {
         
         # if($noDuplicatesRemoval == 0) {
         #    $tailID .= ".noDup";
-        #    system("/proj/a2012043/software/clc-assembly-cell-beta-4.0.6-linux_64/remove_duplicates -p -r -i $read_1 $read_2 -o $outputID\.fastq -s $outputID\_CLCstats.txt > output_CLCremoveDuplicates.std 2> output_CLCremoveDuplicates.err")  == 0 or die("not able to generate hitogram : $!");
+        #    system("/proj/a2012043/software/clc-assembly-cell-beta-4.0.6-linux_64/remove_duplicates -p -r -i $read_1 $read_2 -o $outputID\.fq -s $outputID\_CLCstats.txt > output_CLCremoveDuplicates.std 2> output_CLCremoveDuplicates.err")  == 0 or die("not able to generate hitogram : $!");
             ## now split the file
         #
-        #    $read_1 = "$outputID\_1$tailID\.fastq";
-        #    $read_2 = "$outputID\_2$tailID\.fastq";
+        #    $read_1 = "$outputID\_1$tailID\.fq";
+        #    $read_2 = "$outputID\_2$tailID\.fq";
         #
-        #    open(FASTQ, "$outputID\.fastq") or die("not able to open file $outputID\.fastq: $!");
+        #    open(FASTQ, "$outputID\.fq") or die("not able to open file $outputID\.fq: $!");
         #    open(FASTQ_1, ">$read_1") or die("not able to open file $read_1: $!");
         #    open(FASTQ_2, ">$read_2") or die("not able to open file $read_2: $!");
         #    while(my $head_1  = <FASTQ>) {
@@ -196,7 +199,7 @@ sub MPpipeline_noRef {
         #    print "number of reads pairs after duplicate removal is $numReadsFile1\n";
         #    push @ToBeDeleted, $read_1;
         #    push @ToBeDeleted, $read_2;
-        #    push @ToBeDeleted, "$outputID\.fastq";
+        #    push @ToBeDeleted, "$outputID\.fq";
         #
         #}
         
@@ -252,15 +255,15 @@ sub alignReads {
 
 sub removeLinker {
     my ($read_1, $read_2, $outputID) = @_;
-    my $trimTool ="/proj/a2012043/software/clc-adapter-trim/adapter_trim-4.08beta";
+    my $trimTool ="/bubo/home/h18/johann/bin/clc_trimmer/adapter_trim-4.08beta";
     
     print "looking for adapter\n";
     
-    my $pairedInterlevedLinker   = "$outputID\.i.linker.fastq";
-    my $pairedInterlevedNoLinker = "$outputID\.i.nonlinker.fastq";
-    my $singleLinker             = "$outputID\.se.linker.fastq";
-    my $singleNoLinker           = "$outputID\.se.nonlinker.fastq";
-    system("$trimTool  -r -i $read_1 $read_2 -f $pairedInterlevedLinker -g $pairedInterlevedNoLinker -t $singleLinker -u $singleNoLinker -m 30 -a CTGTCTCTTATACACATCTAGATGTGTATAAGAGACAG -a CTGTCTCTTATACACATCT -a AGATGTGTATAAGAGACAG   > output_adapterTrimming.std 2> output_adapterTrimming.err") == 0 or die("error while running $trimTool: $!");
+    my $pairedInterlevedLinker   = "$outputID\.i.linker.fq";
+    my $pairedInterlevedNoLinker = "$outputID\.i.nonlinker.fq";
+    my $singleLinker             = "$outputID\.se.linker.fq";
+    my $singleNoLinker           = "$outputID\.se.nonlinker.fq";
+    system("$trimTool  -r -i $read_1 $read_2 -f $pairedInterlevedLinker -g $pairedInterlevedNoLinker -t $singleLinker -u $singleNoLinker -m 30 -a TCGTATAACTTCGTATAATGTATGCTATACGAAGTTATTACG -a CGTAATAACTTCGTATAGCATACATTATACGAAGTTATACGA   > output_adapterTrimming.std 2> output_adapterTrimming.err") == 0 or die("error while running $trimTool: $!");
     
     
     my $pairsWithLinker   		= countReadsSingleFile($pairedInterlevedLinker)/2;
@@ -278,7 +281,7 @@ sub removeLinker {
     push @ToBeDeleted, "output_adapterTrimming.std";
     push @ToBeDeleted, "output_adapterTrimming.err";
     
-    my $pairedInterleavedTrimmed = "$outputID\.i.trimmed.fastq";
+    my $pairedInterleavedTrimmed = "$outputID\.i.trimmed.fq";
     system("cat $pairedInterlevedLinker $pairedInterlevedNoLinker > $pairedInterleavedTrimmed") == 0 or die("error while running cat $pairedInterlevedLinker $pairedInterlevedNoLinker > $pairedInterleavedTrimmed: $!");
     
     my $tailID .= "_trimmed";
@@ -286,8 +289,8 @@ sub removeLinker {
     push @ToBeDeleted, "output_fastqi2fastqp.pl.std";
     push @ToBeDeleted, "output_fastqi2fastqp.pl.err";
     
-    $read_1 = "$outputID$tailID\_1\.fastq";
-    $read_2 = "$outputID$tailID\_2\.fastq";
+    $read_1 = "$outputID$tailID\.1\.fq";
+    $read_2 = "$outputID$tailID\.2\.fq";
     push @ToBeDeleted, $pairedInterleavedTrimmed;
     
     system("sed -i 's/#0\/1_/#0\/1 /' $read_1");
@@ -307,13 +310,13 @@ sub checkDataConsistency {
         my ($ID, $dirname, $suffix);
         my $gz = 0;
         
-        if($reads_1 =~ /(.*)\_1.fastq$/) {
-           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\_1\.fastq/);
-        } elsif($reads_1 =~ /(.*)\_1.fastq.gz$/) {
+        if($reads_1 =~ /(.*)\.1.fq$/) {
+           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\.1\.fq/);
+        } elsif($reads_1 =~ /(.*)\.1.fq.gz$/) {
             $gz = 1;
-           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\_1\.fastq\.gz/);
+           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\.1\.fq\.gz/);
         } else {
-            die("file $reads_1 not in correct format: should look like name_1.fastq or name_1.fastq.gz: $!");
+            die("file $reads_1 not in correct format: should look like name.1.fq or name.1.fq.gz: $!");
         }
     	
         #print $ID."\n";
@@ -321,11 +324,11 @@ sub checkDataConsistency {
         #print $suffix."\n";
        
         if($gz == 0) {
-	        $reads_1    = $dirname.$ID."_1.fastq";
-    		$reads_2 	= $dirname.$ID."_2.fastq";
+	        $reads_1    = $dirname.$ID.".1.fq";
+    		$reads_2 	= $dirname.$ID.".2.fq";
         } else {
-            $reads_1    = $dirname.$ID."_1.fastq.gz";
-    		$reads_2 	= $dirname.$ID."_2.fastq.gz";
+            $reads_1    = $dirname.$ID.".1.fq.gz";
+    		$reads_2 	= $dirname.$ID.".2.fq.gz";
         }
         
 	    if(! -e $reads_1) {
@@ -348,7 +351,7 @@ sub checkDataConsistency {
     	}
         my ($referenceDirname, $referenceSuffix);
         ($referenceID, $referenceDirname, $referenceSuffix) = fileparse($reference, qr/\.fasta/);
-		
+
     }
 
 }
@@ -430,11 +433,11 @@ __END__
  
 =head1 SYNOPSIS
  
- SciLifeLab-MP-removeDuplicates.pl --reads fileToProcess_1.fastq [OPTIONS]
+ SciLifeLab-MP-removeDuplicates.pl --reads fileToProcess_1.fq [OPTIONS]
  
  Options (Mandatory)
  
- --reads file containing reads one. Data is assumed to be provided in pairs in two different files with the header but ending _1.fastq and _2.fastq respectively. This option can be repeated sevaral times
+ --reads file containing reads one. Data is assumed to be provided in pairs in two different files with the header but ending .1.fq and .2.fq respectively. This option can be repeated sevaral times
  
   Options (Not mandatory)
 --reference
@@ -443,11 +446,3 @@ __END__
  --no-remove-dupl
  --help displays this help message
  --no-clean do not delete intermediate files
-
-
-
-
-
-
-
-
