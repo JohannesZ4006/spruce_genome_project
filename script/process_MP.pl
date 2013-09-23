@@ -7,9 +7,9 @@ use File::Basename;
 
 
 ##########################################################################################################
-##########																						##########
-##########                 MATE-PAIRS-APPLICATION PIPELINE										##########
-##########																						##########
+##########                                                                                      ##########
+##########                 MATE-PAIRS-APPLICATION PIPELINE                                      ##########
+##########                                                                                      ##########
 ##########################################################################################################
 
 ## 2013-09-17: changed by Johannes, based on http://sprucewiki.scilifelab.se/spruceassembly/node/1720:
@@ -21,27 +21,27 @@ use File::Basename;
 
 
 
-my @reads_1 			= ();
-my @reads_2				= (); 
-my @IDs      			= (); ## headers name of all outputs files
-my $histWidth			= 10000;
-my $noAdaptorRemoval	= 0;
+my @reads_1             = ();
+my @reads_2             = (); 
+my @IDs                 = (); ## headers name of all outputs files
+my $histWidth           = 10000;
+my $noAdaptorRemoval    = 0;
 my $noDuplicatesRemoval = 0;
-my $noClean 			= 0;
-my $reference 			= "";
-my $help  				= 0;
+my $noClean             = 0;
+my $reference           = "";
+my $help                = 0;
 
-my $scriptDir    		= "/bubo/home/h18/johann/spruce_scripts/";
+my $scriptDir           = "/bubo/home/h18/johann/scripts_spruce_qc/";
 
 
 GetOptions(
-	'reads=s'  			=> \@reads_1,
-	'reference=s'		=> \$reference,
-	'hist-width=s'		=> \$histWidth,
-	'no-adapt-removal'	=> \$noAdaptorRemoval,
-	'no-remove-dupl'	=> \$noDuplicatesRemoval,
-	'no-clean'     		=> \$noClean,
-	'help|?'    		=> \$help
+    'reads=s'           => \@reads_1,
+    'reference=s'       => \$reference,
+    'hist-width=s'      => \$histWidth,
+    'no-adapt-removal'  => \$noAdaptorRemoval,
+    'no-remove-dupl'    => \$noDuplicatesRemoval,
+    'no-clean'          => \$noClean,
+    'help|?'            => \$help
 ) or pod2usage(2);
 
 
@@ -86,13 +86,13 @@ sub MPpipeline_Ref {
         my ($numReadsFile1, $numReadsFile2) = countReads($read_1, $read_2);
         print "number of original reads pairs is $numReadsFile1\n";
         
-        ## aling original reads
+        ## align original reads
         alignReads($read_1, $read_2, $ID);
         
-        if($noAdaptorRemoval == 0) { #remove adoptor and re-aling
+        if($noAdaptorRemoval == 0) { #remove adoptor and re-align
             ### NOW TRIM ADAPTER
             ($read_1, $read_2, $ID) = removeLinker($read_1, $read_2, $ID);
-            ##now re-aling
+            ##now re-align
             alignReads($read_1, $read_2, $ID);
         }
     }
@@ -175,7 +175,7 @@ sub MPpipeline_noRef {
         #        my $comment_1 = <FASTQ>;
         #        my $quality_1 = <FASTQ>;
         #
-        #       my $head_2 	  = <FASTQ>;
+        #       my $head_2    = <FASTQ>;
         #        my $seq_2     = <FASTQ>;
         #       my $comment_2 = <FASTQ>;
         #        my $quality_2 = <FASTQ>;
@@ -225,10 +225,10 @@ sub alignReads {
     my $BAMaligned="$MappingBase\_onlyAligned.bam";
     my $BAMmarkDup="$MappingBase\_onlyAligned_markDup.bam";
     
-    my $Reads1SAI		="$MappingBase\_1.sai";
-    my $Reads2SAI		="$MappingBase\_2.sai";
-    my $Reads1SAI_err	="$MappingBase\_1.err";
-    my $Reads2SAI_err	="$MappingBase\_2.err";
+    my $Reads1SAI       ="$MappingBase\_1.sai";
+    my $Reads2SAI       ="$MappingBase\_2.sai";
+    my $Reads1SAI_err   ="$MappingBase\_1.err";
+    my $Reads2SAI_err   ="$MappingBase\_2.err";
     
     system("bwa aln -t 8 -o 1 $reference $read_1 > $Reads1SAI 2> $Reads1SAI.err") == 0 or die("error:$!");
     system("bwa aln -t 8 -o 1 $reference $read_2 > $Reads2SAI 2> $Reads2SAI.err") == 0 or die("error:$!");
@@ -248,7 +248,7 @@ sub alignReads {
     push @ToBeDeleted, "$MappingBase\_samtools_sort.err";
     push @ToBeDeleted, "$MappingBase\_samtools_view.err";
     push @ToBeDeleted, "$MappingBase\_collectInsertSize.err";
-	push @ToBeDeleted, "$MappingBase\_MarkDuplicates.err";
+    push @ToBeDeleted, "$MappingBase\_MarkDuplicates.err";
 }
 
 
@@ -266,9 +266,9 @@ sub removeLinker {
     system("$trimTool  -r -i $read_1 $read_2 -f $pairedInterlevedLinker -g $pairedInterlevedNoLinker -t $singleLinker -u $singleNoLinker -m 30 -a TCGTATAACTTCGTATAATGTATGCTATACGAAGTTATTACG -a CGTAATAACTTCGTATAGCATACATTATACGAAGTTATACGA   > output_adapterTrimming.std 2> output_adapterTrimming.err") == 0 or die("error while running $trimTool: $!");
     
     
-    my $pairsWithLinker   		= countReadsSingleFile($pairedInterlevedLinker)/2;
-    my $pairsWithNoLinker 		= countReadsSingleFile($pairedInterlevedNoLinker)/2;
-    my $seAfterLinkerRemoval	= countReadsSingleFile($singleLinker) + countReadsSingleFile($singleNoLinker);
+    my $pairsWithLinker         = countReadsSingleFile($pairedInterlevedLinker)/2;
+    my $pairsWithNoLinker       = countReadsSingleFile($pairedInterlevedNoLinker)/2;
+    my $seAfterLinkerRemoval    = countReadsSingleFile($singleLinker) + countReadsSingleFile($singleNoLinker);
     print "pairs with linker: $pairsWithLinker\n";
     print "pairs no linker: $pairsWithNoLinker\n";
     print "se after linker removal: $seAfterLinkerRemoval\n";
@@ -318,27 +318,27 @@ sub checkDataConsistency {
         } else {
             die("file $reads_1 not in correct format: should look like name.1.fq or name.1.fq.gz: $!");
         }
-    	
+        
         #print $ID."\n";
         #print $dirname."\n";
         #print $suffix."\n";
        
         if($gz == 0) {
-	        $reads_1    = $dirname.$ID.".1.fq";
-    		$reads_2 	= $dirname.$ID.".2.fq";
+            $reads_1    = $dirname.$ID.".1.fq";
+            $reads_2    = $dirname.$ID.".2.fq";
         } else {
             $reads_1    = $dirname.$ID.".1.fq.gz";
-    		$reads_2 	= $dirname.$ID.".2.fq.gz";
+            $reads_2    = $dirname.$ID.".2.fq.gz";
         }
         
-	    if(! -e $reads_1) {
-    	    die("File $reads_1 does not exists: please provided an existing file: $!");
-    	}
+        if(! -e $reads_1) {
+            die("File $reads_1 does not exists: please provide an existing file: $!");
+        }
         if(! -e $reads_2) {
-            die("File $reads_2 does not exists: check that $reads_1 is a crrectly mate pair file: $!");
+            die("File $reads_2 does not exists: check that $reads_1 is a correct mate pair file: $!");
         }
         
-        ### Check if I have the rights to write inthis folder
+        ### Check if I have the rights to write in this folder
         die("Cannot write in current folder: $!") if (! -w "./");
         
         push @reads_2, $reads_2;
@@ -347,8 +347,8 @@ sub checkDataConsistency {
     
     if($reference ne "") {
         if(! -e $reference) {
-    	    #die("File $reference does not exists: please provided an existing file: $!");
-    	}
+            #die("File $reference does not exists: please provided an existing file: $!");
+        }
         my ($referenceDirname, $referenceSuffix);
         ($referenceID, $referenceDirname, $referenceSuffix) = fileparse($reference, qr/\.fasta/);
 
@@ -370,7 +370,7 @@ sub countReads {
     }
     my $readsFile1 = 0;
     while(<FASTQ>) {
-    	$readsFile1 ++;
+        $readsFile1 ++;
     }
     close FASTQ;
     $readsFile1 = $readsFile1/4;
@@ -382,7 +382,7 @@ sub countReads {
     }
     my $readsFile2 = 0;
     while(<FASTQ>) {
-    	$readsFile2 ++;
+        $readsFile2 ++;
     }
     $readsFile2 = $readsFile2/4;
 
@@ -391,7 +391,7 @@ sub countReads {
     print "$secondMate contains $readsFile2\n";
 
     if($readsFile1 != $readsFile2) {
-    	print "ERROR: two files must contain same amount of reads\n";
+        print "ERROR: two files must contain same amount of reads\n";
         exit 0;
     }
     
@@ -414,7 +414,7 @@ sub countReadsSingleFile {
     }
     my $readsFile1 = 0;
     while(<FASTQ>) {
-    	$readsFile1 ++;
+        $readsFile1 ++;
     }
     close FASTQ;
     $readsFile1 = $readsFile1/4;
@@ -436,11 +436,10 @@ __END__
  SciLifeLab-MP-removeDuplicates.pl --reads fileToProcess_1.fq [OPTIONS]
  
  Options (Mandatory)
+ --reads file containing reads one. Data is assumed to be provided in pairs in two different files with the same base name but ending .1.fq and .2.fq respectively. This option can be repeated sevaral times
  
- --reads file containing reads one. Data is assumed to be provided in pairs in two different files with the header but ending .1.fq and .2.fq respectively. This option can be repeated sevaral times
- 
-  Options (Not mandatory)
---reference
+ Options (Not mandatory)
+ --reference
  --hist-width
  --no-adapt-removal
  --no-remove-dupl
