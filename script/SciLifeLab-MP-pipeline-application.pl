@@ -1,3 +1,4 @@
+
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -99,6 +100,7 @@ sub isAlignerSupported {
 sub MPpipeline_Ref {
     foreach my $i (0..@IDs-1) {
         #### compute number of reads prior to duplicate removal and quality trimming
+        print "\n\n\nRunning MP pipeline on files:\n";
         print "$reads_1[$i]\n";
         print "$reads_2[$i]\n";
         print "$IDs[$i]\n";
@@ -307,15 +309,14 @@ sub sort_duplicates_GCcontentCheck{
 
 sub removeLinker {
     my ($read_1, $read_2, $outputID) = @_;
-    ##TODO: replace CLCadapter-trim with cutadapt
-    my $trimTool ="/proj/a2012043/software/clc-adapter-trim/adapter_trim-4.08beta";
+    my $trimTool ="/home/johann/bin/clc_trimmer/adapter_trim-4.08beta";
     
     print "looking for adapter\n";
     
-    my $pairedInterlevedLinker   = "$outputID\.i.linker.fastq";
-    my $pairedInterlevedNoLinker = "$outputID\.i.nonlinker.fastq";
-    my $singleLinker             = "$outputID\.se.linker.fastq";
-    my $singleNoLinker           = "$outputID\.se.nonlinker.fastq";
+    my $pairedInterlevedLinker   = "$outputID\.i.linker.fq";
+    my $pairedInterlevedNoLinker = "$outputID\.i.nonlinker.fq";
+    my $singleLinker             = "$outputID\.se.linker.fq";
+    my $singleNoLinker           = "$outputID\.se.nonlinker.fq";
     my $toBeRemoved = "";
     foreach my $adaptor (@adaptors) {
         $toBeRemoved .= " -a $adaptor ";
@@ -339,14 +340,14 @@ sub removeLinker {
     push @ToBeDeleted, "output_adapterTrimming.std";
     push @ToBeDeleted, "output_adapterTrimming.err";
     
-    my $pairedInterleavedTrimmed = "$outputID\.i.trimmed.fastq";
+    my $pairedInterleavedTrimmed = "$outputID\.i.trimmed.fq";
     system("cat $pairedInterlevedLinker $pairedInterlevedNoLinker > $pairedInterleavedTrimmed") == 0 or die("error while running cat $pairedInterlevedLinker $pairedInterlevedNoLinker > $pairedInterleavedTrimmed: $!");
     
     my $tailID .= "_trimmed";
     fastqi2fastqp($pairedInterleavedTrimmed, "$outputID$tailID");
     
-    $read_1 = "$outputID$tailID\_1\.fastq";
-    $read_2 = "$outputID$tailID\_2\.fastq";
+    $read_1 = "$outputID$tailID\.1\.fq";
+    $read_2 = "$outputID$tailID\.2\.fq";
     push @ToBeDeleted, $pairedInterleavedTrimmed;
     
     system("sed -i 's/#0\/1_/#0\/1 /' $read_1");
@@ -366,22 +367,22 @@ sub checkDataConsistency {
         my ($ID, $dirname, $suffix);
         my $gz = 0;
         
-        if($reads_1 =~ /(.*)\_1.fastq$/) {
-           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\_1\.fastq/);
-        } elsif($reads_1 =~ /(.*)\_1.fastq.gz$/) {
+        if($reads_1 =~ /(.*)\.1.fq$/) {
+           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\.1\.fq/);
+        } elsif($reads_1 =~ /(.*)\.1.fq.gz$/) {
             $gz = 1;
-           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\_1\.fastq\.gz/);
+           ($ID, $dirname, $suffix) = fileparse($reads_1, qr/\.1\.fq\.gz/);
         } else {
-            die("file $reads_1 not in correct format: should look like name_1.fastq or name_1.fastq.gz: $!");
+            die("file $reads_1 not in correct format: should look like name.1.fq or name.1.fq.gz: $!");
         }
     	
        
         if($gz == 0) {
-	        $reads_1    = $dirname.$ID."_1.fastq";
-    		$reads_2 	= $dirname.$ID."_2.fastq";
+	        $reads_1    = $dirname.$ID.".1.fq";
+    		$reads_2 	= $dirname.$ID.".2.fq";
         } else {
-            $reads_1    = $dirname.$ID."_1.fastq.gz";
-    		$reads_2 	= $dirname.$ID."_2.fastq.gz";
+            $reads_1    = $dirname.$ID.".1.fq.gz";
+    		$reads_2 	= $dirname.$ID.".2.fq.gz";
         }
         
 	    if(! -e $reads_1) {
@@ -481,8 +482,8 @@ sub countReadsSingleFile {
 sub fastqi2fastqp {
     my ($in , $outID) = @_;
     open(IN, $in);
-    open(OUT1, ">$outID\_1.fastq");
-    open(OUT2, ">$outID\_2.fastq");
+    open(OUT1, ">$outID\.1.fq");
+    open(OUT2, ">$outID\.2.fq");
 
     while(my $seq1=<IN>){
         $seq1 .= <IN>;
@@ -510,11 +511,11 @@ __END__
  
 =head1 SYNOPSIS
  
-SciLifeLab-MP-pipeline-application.pl --reads mate_pair_1.fastq[.gz]  [--reads mate_pair_1.fastq[.gz]] [--reference PATH_TO_DATA_STRUCTURE] [OPTIONS]
+SciLifeLab-MP-pipeline-application.pl --reads mate_pair.1.fq[.gz]  [--reads mate_pair.1.fq[.gz]] [--reference PATH_TO_DATA_STRUCTURE] [OPTIONS]
 
  Options (Mandatory)
  
- --reads file containing read one. It is assumed that paired reads are saved in two different files with the same header but ending with _1.fastq[.gz] and _2.fastq[.gz] respectively. This option can be repeated sevaral times
+ --reads file containing read one. It is assumed that paired reads are saved in two different files with the same header but ending with .1.fq[.gz] and .2.fq[.gz] respectively. This option can be repeated sevaral times
  
   Options (Not mandatory)
  --aligner   ALIGNER TO BE USED
